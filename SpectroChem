@@ -1,0 +1,75 @@
+import math         # Для вызова округления "вверх"
+
+project= "Hello! \n This program wil help you to create methods for Interlaboratory tests! \n Break a leg, mthf!"
+print(project)
+
+                                                # Обозначения переменных
+#------------------------------------------------------------------------------------------------------------
+
+sigma_pt = float()        # стандартное отклонение для оценки квалификации
+x_i = float()             # результат измерений i-го участника
+x_pt = float()            # приписанное значение;
+u_X_pt = float()          # стандартная неопределенность приписанного значения;
+z = []                    # индекс, используемый для оценки квалификации;
+z_1 = []                  # модифицированный z-индекс, включающий неопределенность приписанного значения;
+data = [1,20,5,6,4,5,7,10,4,5,6,6,20,2]     #data example with quantity>=10
+data_temp = []            # temporary data for calculations
+s_asterisk = float()      # робастная оценка стандартного отклонения участника
+p = int()                 # Количество участников
+m = int()                 # Количество отброшенных занчений
+m_2 = int()               # Количество отброшенных занчений равное m до процедуры отброса хвостов
+#------------------------------------------------------------------------------------------------------------
+
+
+
+data_temp = sorted(data)                                 # Сортируем список для процедуры отброса хвостов
+m= math.ceil(len(data_temp)/5)                           # Определяем количество отбрасываемых значений (20%)
+m_2 =m
+print("Количество выбросов =", m)
+while m!=0:                                              # Отбрасываем из списка 10% с каждого края
+    if m%2!=0:  
+        del data_temp[len(data_temp)-1]
+    else:
+        del data_temp[0]
+    m=m-1
+x_pt = round(sum(data_temp) / len(data_temp),3)          # Рассчёт предварительного робастного x_pt
+
+for i in range(m_2):
+    data_temp.append(x_pt)                               # Добавляю x_pt взамен отброшенных хвостов (для улучшения мат ожидания)
+
+x_pt = round(sum(data_temp) / len(data_temp),3)          # Конечное x_pt с учётом добавленных новых хвостов
+print("Значение робастного =",x_pt)
+
+def stdev(data):                                         # Функция для определения стандартного отклонения
+    diffs = 0
+    for n in data:
+        diffs += (n - x_pt)**(2)
+    return (diffs/(len(data)-1))**(0.5)
+
+sigma_pt = stdev(data)                                   # Рассчёт стандартного отклонения для оценки квалификации
+
+for i in data:                                           # Создание списка z из оценок квалификации участников
+    z.append(round((i - x_pt)/sigma_pt,3))
+print(z)
+
+
+
+import numpy as np                                       # Графичек
+import matplotlib.pyplot as plt
+x = np.array(z)
+
+y = np.arange(0,len(z),1)
+
+fig = plt.figure()
+plt.scatter(y,x)
+plt.xlabel('Poor participant')
+plt.ylabel('z index of your life')
+#plt.legend()
+#plt.colorbar()
+
+plt.text(0.5, 0.6, 'Qualification index, mthf!')
+
+plt.title('Perfect program for you and me <3')
+
+grid1 = plt.grid(True)
+plt.show()
