@@ -1,75 +1,113 @@
-import math         # Для вызова округления "вверх"
-
-project= "Hello! \n This program wil help you to create methods for Interlaboratory tests! \n Break a leg, mthf!"
+project = "Hello! \n This program wil help you to create methods for Interlaboratory tests! \n Break a leg, mthf!"
 print(project)
 
-                                                # Обозначения переменных
-#------------------------------------------------------------------------------------------------------------
+# Обозначения переменных
+# ------------------------------------------------------------------------------------------------------------
 
-sigma_pt = float()        # стандартное отклонение для оценки квалификации
-x_i = float()             # результат измерений i-го участника
-x_pt = float()            # приписанное значение;
-u_X_pt = float()          # стандартная неопределенность приписанного значения;
-z = []                    # индекс, используемый для оценки квалификации;
-z_1 = []                  # модифицированный z-индекс, включающий неопределенность приписанного значения;
-data = [1,20,5,6,4,5,7,10,4,5,6,6,20,2]     #data example with quantity>=10
-data_temp = []            # temporary data for calculations
-s_asterisk = float()      # робастная оценка стандартного отклонения участника
-p = int()                 # Количество участников
-m = int()                 # Количество отброшенных занчений
-m_2 = int()               # Количество отброшенных занчений равное m до процедуры отброса хвостов
-#------------------------------------------------------------------------------------------------------------
-
+sigma_pt = float()  # стандартное отклонение для оценки квалификации
+x_i = float()  # результат измерений i-го участника
+x_pt = float()  # приписанное значение;
+u_X_pt = float()  # стандартная неопределенность приписанного значения;
+z = []  # индекс, используемый для оценки квалификации;
+z_1 = []  # модифицированный z-индекс, включающий неопределенность приписанного значения;
+data = [1, 20, 5, 6, 4, 5, 7, 10, 4, 5, 6, 6, 20, 2]  # data example with quantity>=10
+data_temp = []  # temporary data for calculations
+s_asterisk = float()  # робастная оценка стандартного отклонения участника
+p = len(data)  # Количество участников
+m = int()  # Количество отброшенных занчений
+m_2 = int()  # Количество отброшенных занчений равное m до процедуры отброса хвостов
 
 
-data_temp = sorted(data)                                 # Сортируем список для процедуры отброса хвостов
-m= math.ceil(len(data_temp)/5)                           # Определяем количество отбрасываемых значений (20%)
-m_2 =m
-print("Количество выбросов =", m)
-while m!=0:                                              # Отбрасываем из списка 10% с каждого края
-    if m%2!=0:  
-        del data_temp[len(data_temp)-1]
-    else:
-        del data_temp[0]
-    m=m-1
-x_pt = round(sum(data_temp) / len(data_temp),3)          # Рассчёт предварительного робастного x_pt
+# ------------------------------------------------------------------------------------------------------------
 
-for i in range(m_2):
-    data_temp.append(x_pt)                               # Добавляю x_pt взамен отброшенных хвостов (для улучшения мат ожидания)
+def main():
+    import math                                                 # Для вызова округления "вверх"
+    def cutting_off():
+        data_temp = sorted(data)                                # Сортируем список для процедуры отброса хвостов
+        m = math.ceil(p / 5)                                    # Определяем количество отбрасываемых значений (20%)
+        while m != 0:                                           # Отбрасываем из списка 10% с каждого края
+            if m % 2 != 0:
+                del data_temp[len(data_temp) - 1]
+            else:
+                del data_temp[0]
+            m = m - 1
+        return data_temp
 
-x_pt = round(sum(data_temp) / len(data_temp),3)          # Конечное x_pt с учётом добавленных новых хвостов
-print("Значение робастного =",x_pt)
+    def robustn():
+        x_pt = round(sum(cutting_off()) / len(cutting_off()), 3)  # Конечное x_pt с учётом добавленных новых хвостов
+        for i in range(p - 1):
+            data_temp.append(x_pt)              # Добавляю x_pt взамен отброшенных хвостов (для улучшения мат ожидания)
+        x_pt = round(sum(data_temp) / len(data_temp), 3)          # Конечное x_pt с учётом добавленных новых хвостов
+        return x_pt
 
-def stdev(data):                                         # Функция для определения стандартного отклонения
-    diffs = 0
-    for n in data:
-        diffs += (n - x_pt)**(2)
-    return (diffs/(len(data)-1))**(0.5)
+    def stdev():                                          # Функция для определения стандартного отклонения
+        diffs = 0
+        for n in data:
+            diffs += (n - robustn()) ** (2)
+        sigma_pt = (diffs / (len(data) - 1)) ** (0.5)     # Считаю стандартное отклонение для оценки квалификации
+        return sigma_pt
 
-sigma_pt = stdev(data)                                   # Рассчёт стандартного отклонения для оценки квалификации
+    def med(data):                                        # Функция определения медианы
+        data = sorted(data)
+        i = 0
+        a = 0
+        b = 0
+        if len(data) % 2 != 0:
+            return data[len(data) // 2]
+        else:
+            a = len(data) // 2 - 1
+            b = len(data) // 2
+            i = (data[a] + data[b]) / 2
+            return i
+    # -----------------simplified version-------------------
+    def AlgA():                                            # Упрощённый Алгоритм А
+        data_temp = []
+        for i in data:
+            data_temp.append(math.fabs(i - med(data)))
+        s_asterisk = (1 / (0.798 * p)) * sum(data_temp)
+        return s_asterisk
 
-for i in data:                                           # Создание списка z из оценок квалификации участников
-    z.append(round((i - x_pt)/sigma_pt,3))
-print(z)
+    # -----------------simplified version-------------------
+
+    def estimation():
+        u_X_pt = 1.25 * AlgA() / (p) ** 0.5               # Оценка квалификации
+        if u_X_pt < 0.3 * stdev():
+            for i in data:                                # Создание списка z из оценок квалификации участников
+                z.append(math.fabs(round((i - robustn()) / stdev(), 3)))
+            print(z)
+            return z
+        else:
+            for i in data:
+                z_1.append(math.fabs(round(((i - robustn()) / (stdev() ** 2 + u_X_pt ** 2) ** 0.5), 3)))
+            print(z_1)
+            return z_1
+
+    estimation()
+
+    def visual():
+        import numpy as np                                # Графичек
+        import matplotlib.pyplot as plt
+
+        x = np.array(z)
+        y = np.arange(0, len(z), 1)
+
+        plt.figure()
+        plt.scatter(y, x)
+        plt.xlabel('Poor participant')
+        plt.ylabel('z index of your life')
+
+        plt.text(0.5, 0.6, 'Qualification index, mthf!')
+        plt.title('Perfect program for you and me <3')
+        plt.grid(True)
+
+        print("Количество выбросов =", math.ceil(p / 5))
+        print("Значение робастного =", robustn())
+        print('Cтандартное отклонение=', stdev())
+
+        plt.show()
+
+    visual()
 
 
+main()
 
-import numpy as np                                       # Графичек
-import matplotlib.pyplot as plt
-x = np.array(z)
-
-y = np.arange(0,len(z),1)
-
-fig = plt.figure()
-plt.scatter(y,x)
-plt.xlabel('Poor participant')
-plt.ylabel('z index of your life')
-#plt.legend()
-#plt.colorbar()
-
-plt.text(0.5, 0.6, 'Qualification index, mthf!')
-
-plt.title('Perfect program for you and me <3')
-
-grid1 = plt.grid(True)
-plt.show()
