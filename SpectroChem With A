@@ -1,0 +1,149 @@
+project = "Hello! \n This program wil help you to create methods for Interlaboratory tests! \n Break a leg, mthf!"
+print(project)
+
+# Обозначения переменных
+# ------------------------------------------------------------------------------------------------------------
+
+sigma_pt = float()  # стандартное отклонение для оценки квалификации
+x_i = float()  # результат измерений i-го участника
+x_pt = float()  # приписанное значение;
+u_X_pt = float()  # стандартная неопределенность приписанного значения;
+z = []  # индекс, используемый для оценки квалификации;
+data = [6,2,7,1,4,7,5,2,6,5]  # data example with quantity>=10
+data_temp = []  # temporary data for calculations
+s_asterisk = float()  # робастная оценка стандартного отклонения участника
+p = len(data)  # Количество участников
+m = int()  # Количество отброшенных занчений
+m_2 = int()  # Количество отброшенных занчений равное m до процедуры отброса хвостов
+x_asterisk = float()
+x_asterisk_2 = 0.0
+
+
+# ------------------------------------------------------------------------------------------------------------
+
+def main():
+    import math  # Для вызова округления "вверх"
+
+    def med(x):  # Функция определения медианы
+        x = sorted(data)
+        i = 0
+        a = 0
+        b = 0
+        if len(x) % 2 != 0:
+            return x[len(x) // 2]
+        else:
+            a = len(x) // 2 - 1
+            b = len(x) // 2
+            i = (x[a] + x[b]) / 2
+            return i
+
+    def AlgAA():
+        data_temp = []
+        x_asterisk = med(sorted(data))
+        data_temp_2 = [x_asterisk / 99, x_asterisk]
+
+        for i in sorted(data):
+            data_temp.append(i - x_asterisk)
+        s_asterisk = 1.483 * med(data_temp)
+
+        while round(math.fabs(data_temp_2[0] - data_temp_2[1]), 3) > 0.001:
+            data_temp = []
+            x_asterisk = data_temp_2[1]
+            #print('eto', x_asterisk)
+            for i in sorted(data):
+                if i < x_asterisk - 1.5 * s_asterisk:
+                    data_temp.append(x_asterisk - 1.5 * s_asterisk)
+                elif i > x_asterisk + 1.5 * s_asterisk:
+                    data_temp.append(x_asterisk + 1.5 * s_asterisk)
+                else:
+                    data_temp.append(i)
+            x_asterisk = sum(data_temp) / p
+            b = float()
+            for i in data_temp:
+                b += (i - x_asterisk) ** 2
+            s_asterisk = 1.134 * ((b / (p - 1)) ** 0.5)
+            del data_temp_2[0]
+            #print(data_temp_2)
+            data_temp_2.insert(1, x_asterisk)
+            #print(data_temp_2)
+        return data_temp_2[1]
+
+    def stdev():  # Функция для определения стандартного отклонения
+        diffs = 0
+        for n in data:
+            diffs += (n - AlgAA()) ** (2)
+        sigma_pt = (diffs / (len(data) - 1)) ** (0.5)  # Считаю стандартное отклонение для оценки квалификации
+        return sigma_pt
+
+
+    def AlgforS():
+        data_temp = []
+        x_asterisk = med(sorted(data))
+        data_temp_2 = [x_asterisk / 99, x_asterisk]
+
+        for i in sorted(data):
+            data_temp.append(i - x_asterisk)
+        s_asterisk = 1.483 * med(data_temp)
+
+        while round(math.fabs(data_temp_2[0] - data_temp_2[1]), 3) > 0.001:
+            data_temp = []
+            x_asterisk = data_temp_2[1]
+            #print('eto', x_asterisk)
+            for i in sorted(data):
+                if i < x_asterisk - 1.5 * s_asterisk:
+                    data_temp.append(x_asterisk - 1.5 * s_asterisk)
+                elif i > x_asterisk + 1.5 * s_asterisk:
+                    data_temp.append(x_asterisk + 1.5 * s_asterisk)
+                else:
+                    data_temp.append(i)
+            x_asterisk = sum(data_temp) / p
+            b = float()
+            for i in data_temp:
+                b += (i - x_asterisk) ** 2
+            s_asterisk = 1.134 * ((b / (p - 1)) ** 0.5)
+            del data_temp_2[0]
+            #print(data_temp_2)
+            data_temp_2.insert(1, x_asterisk)
+            #print(data_temp_2)
+        return s_asterisk
+
+    def estimation():
+        u_X_pt = 1.25 * AlgforS() / (p) ** 0.5  # Оценка квалификации
+        if u_X_pt < 0.3 * stdev():
+            for i in data:          # Создание списка z из оценок квалификации участников
+                z.append(math.fabs(round((i - AlgAA()) / stdev(), 3)))
+            return z
+        else:
+            for i in data:          # Создание списка z' из оценок квалификации участников
+                z.append(math.fabs(round(((i - AlgAA()) / (stdev() ** 2 + u_X_pt ** 2) ** 0.5), 3)))
+            return z
+
+    estimation()
+
+
+    def visual():
+        import numpy as np  # Графичек
+        import matplotlib.pyplot as plt
+
+        x = np.array(z)
+        y = np.arange(0, len(z), 1)
+
+        plt.figure()
+        plt.scatter(y, x)
+        plt.xlabel('Poor participant')
+        plt.ylabel('z index of your life')
+
+        plt.text(0.5, 0.6, 'Qualification index, mthf!')
+        plt.title('Perfect program for you and me <3')
+        plt.grid(True)
+
+        print("Количество выбросов =", math.ceil(p / 5))
+        print("Значение робастного =", AlgAA())
+        print('Cтандартное отклонение=', stdev())
+        print('Cтандартная неопределенность приписанного значения',1.25 * AlgforS() / (p) ** 0.5)
+        plt.show()
+
+    visual()
+
+
+main()
