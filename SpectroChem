@@ -10,7 +10,7 @@ x_pt = float()  # приписанное значение;
 u_X_pt = float()  # стандартная неопределенность приписанного значения;
 z = []  # индекс, используемый для оценки квалификации;
 z_1 = []  # модифицированный z-индекс, включающий неопределенность приписанного значения;
-data = [1, 20, 5, 6, 4, 5, 7, 10, 4, 5, 6, 6, 20, 2]  # data example with quantity>=10
+data = [6,2,7,1,4,7,5,2,6,5]  # data example with quantity>=10
 data_temp = []  # temporary data for calculations
 s_asterisk = float()  # робастная оценка стандартного отклонения участника
 p = len(data)  # Количество участников
@@ -21,11 +21,11 @@ m_2 = int()  # Количество отброшенных занчений ра
 # ------------------------------------------------------------------------------------------------------------
 
 def main():
-    import math                                                 # Для вызова округления "вверх"
+    import math  # Для вызова округления "вверх"
     def cutting_off():
-        data_temp = sorted(data)                                # Сортируем список для процедуры отброса хвостов
-        m = math.ceil(p / 5)                                    # Определяем количество отбрасываемых значений (20%)
-        while m != 0:                                           # Отбрасываем из списка 10% с каждого края
+        data_temp = sorted(data)  # Сортируем список для процедуры отброса хвостов
+        m = math.ceil(p / 5)  # Определяем количество отбрасываемых значений (20%)
+        while m != 0:  # Отбрасываем из списка 10% с каждого края
             if m % 2 != 0:
                 del data_temp[len(data_temp) - 1]
             else:
@@ -36,18 +36,18 @@ def main():
     def robustn():
         x_pt = round(sum(cutting_off()) / len(cutting_off()), 3)  # Конечное x_pt с учётом добавленных новых хвостов
         for i in range(p - 1):
-            data_temp.append(x_pt)              # Добавляю x_pt взамен отброшенных хвостов (для улучшения мат ожидания)
-        x_pt = round(sum(data_temp) / len(data_temp), 3)          # Конечное x_pt с учётом добавленных новых хвостов
+            data_temp.append(x_pt)  # Добавляю x_pt взамен отброшенных хвостов (для улучшения мат ожидания)
+        x_pt = round(sum(data_temp) / len(data_temp), 3)  # Конечное x_pt с учётом добавленных новых хвостов
         return x_pt
 
-    def stdev():                                          # Функция для определения стандартного отклонения
+    def stdev():  # Функция для определения стандартного отклонения
         diffs = 0
         for n in data:
             diffs += (n - robustn()) ** (2)
-        sigma_pt = (diffs / (len(data) - 1)) ** (0.5)     # Считаю стандартное отклонение для оценки квалификации
+        sigma_pt = (diffs / (len(data) - 1)) ** (0.5)  # Считаю стандартное отклонение для оценки квалификации
         return sigma_pt
 
-    def med(data):                                        # Функция определения медианы
+    def med(data):  # Функция определения медианы
         data = sorted(data)
         i = 0
         a = 0
@@ -59,8 +59,9 @@ def main():
             b = len(data) // 2
             i = (data[a] + data[b]) / 2
             return i
+
     # -----------------simplified version-------------------
-    def AlgA():                                            # Упрощённый Алгоритм А
+    def AlgA():  # Упрощённый Алгоритм А
         data_temp = []
         for i in data:
             data_temp.append(math.fabs(i - med(data)))
@@ -70,22 +71,21 @@ def main():
     # -----------------simplified version-------------------
 
     def estimation():
-        u_X_pt = 1.25 * AlgA() / (p) ** 0.5               # Оценка квалификации
+        u_X_pt = 1.25 * AlgA() / (p) ** 0.5  # Оценка квалификации
         if u_X_pt < 0.3 * stdev():
-            for i in data:                                # Создание списка z из оценок квалификации участников
+            for i in data:          # Создание списка z из оценок квалификации участников
                 z.append(math.fabs(round((i - robustn()) / stdev(), 3)))
-            print(z)
             return z
         else:
-            for i in data:
-                z_1.append(math.fabs(round(((i - robustn()) / (stdev() ** 2 + u_X_pt ** 2) ** 0.5), 3)))
-            print(z_1)
-            return z_1
+            for i in data:          # Создание списка z' из оценок квалификации участников
+                z.append(math.fabs(round(((i - robustn()) / (stdev() ** 2 + u_X_pt ** 2) ** 0.5), 3)))
+            return z
 
     estimation()
 
+
     def visual():
-        import numpy as np                                # Графичек
+        import numpy as np  # Графичек
         import matplotlib.pyplot as plt
 
         x = np.array(z)
@@ -103,7 +103,7 @@ def main():
         print("Количество выбросов =", math.ceil(p / 5))
         print("Значение робастного =", robustn())
         print('Cтандартное отклонение=', stdev())
-
+        print('Cтандартная неопределенность приписанного значения', 1.25 * AlgA() / (p) ** 0.5)
         plt.show()
 
     visual()
